@@ -1,12 +1,15 @@
 (ns clojure-jdiameter.core-test
   (:require [clojure.test :refer :all]
-            [clojure-jdiameter.core :refer :all]
+            [clojure-jdiameter.cx :refer :all]
+            [clojure-jdiameter.data :as data]
             [cljito.core :refer :all])
   (:import org.jdiameter.api.Request
            org.jdiameter.api.Answer
            org.jdiameter.api.AvpSet
-           org.jdiameter.api.Avp
-           ))
+           org.jdiameter.api.Avp))
+
+(def cx-listener (make-cx-listener data/get-public-data (constantly nil) data/get-private-data (constantly nil)))
+
 (defn create-mock-answer []
   (let [mockset1 (when->
                  (mock AvpSet)
@@ -15,11 +18,19 @@
         mockset (when->
                  (mock AvpSet)
                  (.addGroupedAvp (any-int) (any-int) (any-boolean) (any-boolean))
-                 (.thenReturn mockset1))]
+                 (.thenReturn mockset1))
+        ans (mock Answer)]
     (when->
-     (mock Answer)
+     ans
      (.getAvps)
-     (.thenReturn mockset))))
+     (.thenReturn mockset))
+    ans))
+
+(defn make-mock-mar []
+  (when->
+     (mock Request)
+     (.getCommandCode)
+     (.thenReturn (int 303))))
 
 (def mock-ok-answer (create-mock-answer))
 (def mock-bad-auth-answer (mock Answer))
@@ -34,9 +45,9 @@
         mock-authdata-avpset (when-> (mock AvpSet) (.getAvp 608 10415) (.thenReturn mock-authscheme-avp))
         mock-authdata-avp (when-> (mock Avp) (.getGrouped) (.thenReturn mock-authdata-avpset))
         mock-avpset (mock AvpSet)
-        mocked (when-> (mock Request) (.getAvps) (.thenReturn mock-avpset))]
+        mocked (when-> (make-mock-mar) (.getAvps) (.thenReturn mock-avpset))]
     (when-> mock-avpset
-            (.getAvp 2)
+            (.getAvp 1)
             (.thenReturn user-name-avp))
     (when-> mock-avpset
             (.getAvp 601 10415)
