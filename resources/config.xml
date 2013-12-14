@@ -64,8 +64,24 @@
     <Network>
         <Peers>
             <Peer name="aaa://localhost:1813" attempt_connect="false" rating="1"/>
+            <Peer name="aaa://hs.example.com:1813" attempt_connect="false" rating="1"/>
         </Peers>
         <Realms>
+            <Realm name="hs.example.com" peers="hs.example.com" local_action="LOCAL" dynamic="true" exp_time="1">
+		<ApplicationID>
+			<VendorId value="10415"/>
+			<AuthApplId value="16777216"/>
+			<AcctApplId value="16777216"/>
+		</ApplicationID>
+            </Realm>
+            <Realm name="hs.example.com" peers="hs.example.com" local_action="LOCAL" dynamic="true" exp_time="1">
+		<ApplicationID>
+			<VendorId value="0"/>
+			<AuthApplId value="16777216"/>
+			<AcctApplId value="16777216"/>
+		</ApplicationID>
+            </Realm>
+
             <Realm name="localhost" peers="localhost" local_action="LOCAL" dynamic="true" exp_time="1">
 		<ApplicationID>
 			<VendorId value="10415"/>

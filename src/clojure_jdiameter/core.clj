@@ -7,7 +7,7 @@
 
 (set! *warn-on-reflection* true)
 
-(defn -main []
+(comment defn -main []
   (let [[stack session-factory] (stack/make-stack data/get-public-data (constantly nil) data/get-private-data (constantly nil))]
     (Thread/sleep 60000)
     (comment (let [session (.getNewSession session-factory)
