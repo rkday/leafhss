@@ -3,50 +3,12 @@
             [clojure-jdiameter.cx :refer :all]
             [clojure-jdiameter.data :as data]
             [clojure-jdiameter.testdata :refer :all]
+            [clojure-jdiameter.common-test :refer :all]
             [cljito.core :refer :all])
   (:import org.jdiameter.api.Request
            org.jdiameter.api.Answer
            org.jdiameter.api.AvpSet
            org.jdiameter.api.Avp))
-
-(def cx-listener (make-cx-listener
-                  (get-public-with-scscf "example.com")
-                  get-private
-                  update-scscf!
-                  clear-scscf!
-                  register!
-                  set-auth-pending!
-                  unregister!
-                  update-aka-seqn!
-                  set-scscf-reassignment-pending!))
-
-
-(defn create-mock-answer []
-  (let [mockset1 (when->
-                 (mock AvpSet)
-                 (.addGroupedAvp (any-int) (any-int) (any-boolean) (any-boolean))
-                 (.thenReturn (mock AvpSet)))
-        mockset (when->
-                 (mock AvpSet)
-                 (.addGroupedAvp (any-int) (any-int) (any-boolean) (any-boolean))
-                 (.thenReturn mockset1))
-        ans (mock Answer)]
-    (when->
-     ans
-     (.getAvps)
-     (.thenReturn mockset))
-    ans))
-
-(defn make-mock [code]
-  (when->
-     (mock Request)
-     (.getCommandCode)
-     (.thenReturn (int code))))
-
-(def mock-ok-answer (create-mock-answer))
-(def mock-bad-auth-answer (mock Answer))
-(def mock-unknown-answer (mock Answer))
-(def mock-disassoc-answer (mock Answer))
 
 (defn create-mock-uar [priv pub auth-type visited-network]
   (let [user-name-avp (when-> (mock Avp) (.getUTF8String) (.thenReturn priv))
@@ -67,10 +29,6 @@
     (when-> mock-avpset
             (.getAvp 623 10415)
             (.thenReturn auth-type-avp))
-    (when-> mocked (.createAnswer 2001) (.thenReturn mock-ok-answer))
-    (when-> mocked (.createAnswer 10415 2002) (.thenReturn mock-ok-answer))
-    (when-> mocked (.createAnswer 10415 5002) (.thenReturn mock-disassoc-answer))
-    (when-> mocked (.createAnswer 10415 5006) (.thenReturn mock-bad-auth-answer))
     mocked))
 
 (deftest success-test
@@ -81,5 +39,65 @@
             (create-mock-uar "rkd@example.com"
                              "sip:rkd@example.com"
                              0
+                             "example.com"))))
+    (is (= mock-ok-answer
+           (.processRequest
+            unregistered-cx-listener
+            (create-mock-uar "rkd@example.com"
+                             "sip:rkd@example.com"
+                             0
+                             "example.com"))))
+
+    ))
+
+(deftest success-test-deregistration
+  (testing "Test that a known Multimedia-Auth-Request passes validation"
+    (is (= mock-ok-answer
+           (.processRequest
+            cx-listener
+            (create-mock-uar "rkd@example.com"
+                             "sip:rkd@example.com"
+                             1
                              "example.com"))))))
+
+(deftest success-test-registration-and-capabilities
+  (testing "Test that a known Multimedia-Auth-Request passes validation"
+    (is (= mock-ok-answer
+           (.processRequest
+            cx-listener
+            (create-mock-uar "rkd@example.com"
+                             "sip:rkd@example.com"
+                             2
+                             "example.com"))))))
+
+(deftest unknown-test
+  (testing "Test that a known Multimedia-Auth-Request passes validation"
+    (is (= mock-unknown-answer
+           (.processRequest
+            public-not-found-cx-listener
+            (create-mock-uar "rkd@example.com"
+                             "sip:rkd@example.com"
+                             2
+                             "example.com"))))
+    (is (= mock-unknown-answer
+           (.processRequest
+            private-not-found-cx-listener
+            (create-mock-uar "rkd@example.com"
+                             "sip:rkd@example.com"
+                             2
+                             "example.com"))))
+    (is (= mock-disassoc-answer
+           (.processRequest
+            cx-listener
+            (create-mock-uar "OTHER@example.com"
+                             "sip:rkd@example.com"
+                             2
+                             "example.com"))))
+    (is (= mock-roaming-not-allowed-answer
+           (.processRequest
+            cx-listener
+            (create-mock-uar "rkd@example.com"
+                             "sip:rkd@example.com"
+                             0
+                             "example.co.uk"))))))
 

@@ -1,7 +1,6 @@
 (ns clojure-jdiameter.testdata)
 
-(defn get-public [impu]
-  {:scscf-sip-uri nil
+(def example-public {:scscf-sip-uri "example.com"
    :scscf-diameter-host nil
    :scscf-diameter-realm nil
    :mandatory-capabilities [1 2 3]
@@ -26,18 +25,31 @@
    :alias-groups {6 {:ifcs "<ServiceProfile><InitialFilterCriteria><Priority>1</Priority><TriggerPoint><ConditionTypeCNF>0</ConditionTypeCNF><SPT><ConditionNegated>0</ConditionNegated><Group>0</Group><Method>INVITE</Method></SPT></TriggerPoint><ApplicationServer><ServerName>sip:vpn@192.168.1.139:5060</ServerName><DefaultHandling>0</DefaultHandling><Extension><ForceB2B/></Extension></ApplicationServer></InitialFilterCriteria></ServiceProfile>"}
                   7 {:ifcs "<ServiceProfile><InitialFilterCriteria><Priority>1</Priority><TriggerPoint><ConditionTypeCNF>0</ConditionTypeCNF><SPT><ConditionNegated>0</ConditionNegated><Group>0</Group><Method>REGISTER</Method></SPT></TriggerPoint><ApplicationServer><ServerName>sip:voicemail@192.168.1.1:5060</ServerName><DefaultHandling>0</DefaultHandling></ApplicationServer></InitialFilterCriteria></ServiceProfile>"}
                   8 {:ifcs "<ServiceProfile></ServiceProfile>"}}
-   :registered-impis #{}
+   :registered-impis #{"rkd@example.com"}
    :auth-pending-impis #{}
                   }
   )
+(def example-public-unregistered (-> example-public
+                                     (assoc :scscf-sip-uri nil)
+                                     (assoc :registered-impis #{})))
+
+
+(defn get-public [impu]
+  example-public)
 
 (defn get-public-with-scscf [scscf]
   (fn [impu]
     (assoc (get-public impu) :scscf-sip-uri scscf)))
 
-(defn get-private [impi]
-  {:auth-type "SIP Digest"
+(def example-private {:auth-type "SIP Digest"
    :sip-digest {:realm "example.com" :ha1 "secret"}})
+
+(def example-private-aka {:auth-type "Digest-AKAv1-MD5"
+   :aka {:key "secret" :seqn 6}})
+
+
+(defn get-private [impi]
+  example-private)
 
 (defn clear-scscf! [current-state]
   current-state)

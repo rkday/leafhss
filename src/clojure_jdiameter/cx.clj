@@ -44,7 +44,9 @@
 
 (defn create-sar-response [^org.jdiameter.api.Request r pub server-assignment-type user-data-already-available]
   (debug "create-sar-response called")
-  (comment ))
+  (let [resp (.createAnswer r 2001)
+             ^org.jdiameter.client.impl.parser.AvpSetImpl avps (.getAvps resp)]
+    resp))
 
 (defn create-lir-response [^org.jdiameter.api.Request r auth-type mandatory-capabilities optional-capabilities server-name]
   (cond
@@ -164,13 +166,13 @@
          #{SAR_REGISTRATION SAR_RE_REGISTRATION}
          (do (update-scscf! known-public server-name origin-host origin-realm)
              (register! known-public user-name public-identity)
-             (create-sar-response server-assignment-type user-data-already-available known-public))
+             (create-sar-response r server-assignment-type user-data-already-available known-public))
          #{SAR_NO_ASSIGNMENT}
-         (create-sar-response server-assignment-type user-data-already-available known-public)
+         (create-sar-response r server-assignment-type user-data-already-available known-public)
          #{SAR_UNREGISTERED_USER}
          (do
            (update-scscf! known-public server-name origin-host origin-realm)
-           (create-sar-response server-assignment-type user-data-already-available known-public))
+           (create-sar-response r server-assignment-type user-data-already-available known-public))
          #{SAR_TIMEOUT_DEREGISTRATION
            SAR_USER_DEREGISTRATION
            SAR_DEREGISTRATION_TOO_MUCH_DATA
@@ -180,13 +182,13 @@
          (let [new-state (unregister! known-public user-name public-identity)]
            (if (no-registrations? new-state)
              (clear-scscf! known-public))
-           (create-sar-response server-assignment-type user-data-already-available known-public))
+           (create-sar-response r server-assignment-type user-data-already-available known-public))
          #{SAR_AUTHENTICATION_FAILURE
            SAR_AUTHENTICATION_TIMEOUT}
          (let [new-state (unregister! known-public user-name public-identity)]
            (if (no-registrations? new-state)
              (clear-scscf! known-public))
-           (create-sar-response server-assignment-type user-data-already-available known-public)))))))
+           (create-sar-response r server-assignment-type user-data-already-available known-public)))))))
 
 (defn process-lir [^org.jdiameter.api.Request r get-public get-private update-scscf! clear-scscf! register! set-auth-pending! unregister! update-aka-seqn! set-scscf-reassignment-pending!]
   (let [avps (.getAvps r)
