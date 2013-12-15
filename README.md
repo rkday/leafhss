@@ -2,6 +2,8 @@
 
 A modern open-source HSS for use in IMS networks.
 
+[![Build Status](https://travis-ci.org/rkday/leafhss.png?branch=master)](https://travis-ci.org/rkday/leafhss)
+
 The current version is available for download [here](https://s3.amazonaws.com/org.leafhss/org.leafhss.hss-0.1.0-SNAPSHOT-standalone.jar) and can be run with `java -jar org.leafhss.hss-0.1.0-SNAPSHOT-standalone.jar [options]`
 
 ## Usage
