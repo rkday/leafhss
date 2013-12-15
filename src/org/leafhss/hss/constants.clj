@@ -1,4 +1,4 @@
-(ns clojure-jdiameter.constants)
+(ns org.leafhss.hss.constants)
 
 (def THREEGPP 10415)
 (def REJECTED 4001)

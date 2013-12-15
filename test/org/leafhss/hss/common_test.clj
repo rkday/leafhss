@@ -1,8 +1,8 @@
-(ns clojure-jdiameter.common-test
+(ns org.leafhss.hss.common-test
   (:require [clojure.test :refer :all]
-            [clojure-jdiameter.cx :refer :all]
-            [clojure-jdiameter.data :as data]
-            [clojure-jdiameter.testdata :refer :all]
+            [org.leafhss.hss.cx :refer :all]
+            [org.leafhss.hss.data :as data]
+            [org.leafhss.hss.testdata :refer :all]
             [cljito.core :refer :all])
   (:import org.jdiameter.api.Request
            org.jdiameter.api.Answer

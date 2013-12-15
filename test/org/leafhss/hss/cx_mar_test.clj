@@ -1,9 +1,9 @@
-(ns clojure-jdiameter.cx-mar-test
+(ns org.leafhss.hss.cx-mar-test
   (:require [clojure.test :refer :all]
-            [clojure-jdiameter.cx :refer :all]
-            [clojure-jdiameter.data :as data]
-            [clojure-jdiameter.testdata :refer :all]
-            [clojure-jdiameter.common-test :refer :all]
+            [org.leafhss.hss.cx :refer :all]
+            [org.leafhss.hss.data :as data]
+            [org.leafhss.hss.testdata :refer :all]
+            [org.leafhss.hss.common-test :refer :all]
             [cljito.core :refer :all])
   (:import org.jdiameter.api.AvpSet
            org.jdiameter.api.Avp))

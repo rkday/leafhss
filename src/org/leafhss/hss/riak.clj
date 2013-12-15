@@ -1,4 +1,4 @@
-(ns clojure-jdiameter.riak
+(ns org.leafhss.hss.riak
     (:require [clojure.tools.logging :refer [info debug error]]
             [clojurewerkz.welle.core :as wc]
             [clojurewerkz.welle.buckets :as wb]
@@ -39,6 +39,8 @@
                                                :alias-group 8
                                                :irs 2}}
            :roaming-networks #{"example.com"}
+           :implicit-registration-sets {1 :private-id nil
+                                        2 :private-id "rkd@example.com"}
            :alias-groups {6 {:ifcs "<ServiceProfile><InitialFilterCriteria><Priority>1</Priority><TriggerPoint><ConditionTypeCNF>0</ConditionTypeCNF><SPT><ConditionNegated>0</ConditionNegated><Group>0</Group><Method>INVITE</Method></SPT></TriggerPoint><ApplicationServer><ServerName>sip:vpn@192.168.1.139:5060</ServerName><DefaultHandling>0</DefaultHandling><Extension><ForceB2B/></Extension></ApplicationServer></InitialFilterCriteria></ServiceProfile>"}
                           7 {:ifcs "<ServiceProfile><InitialFilterCriteria><Priority>1</Priority><TriggerPoint><ConditionTypeCNF>0</ConditionTypeCNF><SPT><ConditionNegated>0</ConditionNegated><Group>0</Group><Method>REGISTER</Method></SPT></TriggerPoint><ApplicationServer><ServerName>sip:voicemail@192.168.1.1:5060</ServerName><DefaultHandling>0</DefaultHandling></ApplicationServer></InitialFilterCriteria></ServiceProfile>"}
                           8 {:ifcs "<ServiceProfile></ServiceProfile>"}}}
@@ -149,3 +151,32 @@
                            auth-pending-impis]}]
                  {:registered-impis (disj registered-impis impi)
                   :auth-pending-impis (disj auth-pending-impis impi)}))))
+
+(comment defn add-new
+         ([impi realm password ifcs]
+            (let [impu (strip impi)
+                  irs-uuid (new-uuid)
+                  subscription-uuid (new-uuid)]
+              (kv/store "subscriptions" subscription-uuid
+                        {:mandatory-capabilities []
+                         :optional-capabilities []
+                         :private-ids #{impi}
+                         :public-ids {impu {:barred false
+                                            :alias-group 1
+                                            :irs irs-uuid}}
+                         :roaming-networks #{"example.com"}
+                         :implicit-registration-sets {irs-uuid :private-id impu}
+                         :alias-groups {1 {:ifcs ifcs}}}
+                        :content-type "application/clojure"
+                        :links [{:bucket "subscription-state" :key subscription-uuid :tag "state"}]))
+            (kv/store "impus" impu {}
+                      :content-type "application/clojure"
+                      :links [{:bucket "irs" :key irs-uuid :tag "irs"}])
+            (kv/store "irs" irs-uuid {:registered-impis #{}
+                                      :auth-pending-impis #{}}
+                        :content-type "application/clojure"
+                        :links [{:bucket "subscriptions" :key subscription-uuid :tag "sub"}])
+            (kv/store "impis" impi {:auth-type "SIP Digest"
+                                    :digest {:realm realm :ha1 (md5 (str (impi realm password)))}}
+                      :content-type "application/clojure"
+                      :links [{:bucket "subscriptions" :key subscription-uuid :tag "sub"}])))

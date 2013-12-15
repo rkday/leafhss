@@ -1,7 +1,7 @@
-(ns clojure-jdiameter.cx
+(ns org.leafhss.hss.cx
   (:require [clojure.tools.logging :refer [info debug error]]
-            [clojure-jdiameter.constants :refer :all]
-            [clojure-jdiameter.data :refer :all])
+            [org.leafhss.hss.constants :refer :all]
+            [org.leafhss.hss.data :refer :all])
   (:import org.jdiameter.server.impl.StackImpl
            org.jdiameter.server.impl.helpers.XMLConfiguration
            org.jdiameter.client.impl.parser.AvpSetImpl
@@ -42,11 +42,14 @@
          (.addAvp avps 602 server-name 10415 true false false)
          resp))))
 
-(defn create-sar-response [^org.jdiameter.api.Request r pub server-assignment-type user-data-already-available]
+(defn create-sar-response [^org.jdiameter.api.Request r pub impu server-assignment-type user-data-already-available]
   (debug "create-sar-response called")
   (let [resp (.createAnswer r 2001)
-             ^org.jdiameter.client.impl.parser.AvpSetImpl avps (.getAvps resp)]
-    resp))
+        ^org.jdiameter.client.impl.parser.AvpSetImpl avps (.getAvps resp)]
+    (when (= 0 user-data-already-available)
+      (debug "adding user data")
+      (.addAvp avps 606 (get-userdata impu pub) THREEGPP true false true))
+      resp))
 
 (defn create-lir-response [^org.jdiameter.api.Request r auth-type mandatory-capabilities optional-capabilities server-name]
   (cond
@@ -71,11 +74,11 @@
     (.addAvp avps (int 1) user-name false) ;; SIP-Number-Auth-items
     (.addAvp avps (int 601) public-identity (long 10415) true false false) ;; SIP-Number-Auth-items
     (.addAvp avps (int 607) (long 1) (long 10415) true false true) ;; SIP-Number-Auth-items
-    (.addAvp sip-auth-data 608 "SIP-Digest" 10415 true false false) ;; SIP-Number-Auth-items
-    (.addAvp sip-digest-auth 104 ^String (:digest-realm priv) false) ;; SIP-Number-Auth-items
+    (.addAvp sip-auth-data 608 "SIP Digest" 10415 true false false) ;; SIP-Number-Auth-items
+    (.addAvp sip-digest-auth 104 ^String (:realm (:sip-digest priv)) false) ;; SIP-Number-Auth-items
     (.addAvp sip-digest-auth 111 "MD5" false) ;; SIP-Number-Auth-items
     (.addAvp sip-digest-auth 110 "auth" false) ;; SIP-Number-Auth-items
-    (.addAvp sip-digest-auth 121 ^String (:digest-ha1 priv) false) ;; SIP-Number-Auth-items
+    (.addAvp sip-digest-auth 121 ^String (:ha1 (:sip-digest priv)) false) ;; SIP-Number-Auth-items
     resp))
 
 (defn create-3gpp-error-response [^org.jdiameter.api.Request r code]
@@ -101,10 +104,10 @@
      (nil? known-public)
      (do (debug "Public ID not found")
          (create-3gpp-error-response r UNKNOWN))
-     (not (associated? known-public user-name))
+     (not (associated? known-public public-identity user-name))
      (do (debug "Public and private identies don't match")
          (create-3gpp-error-response r IDENTITIES_DONT_MATCH))
-     (:barred known-public)
+     (all-barred? known-public)
           (do (debug "All Public IDs are barred")
          (create-error-response r REJECTED))
           (and (= auth-type REGISTRATION)
@@ -149,7 +152,7 @@
      (nil? known-public)
      (do (debug "Public ID not found")
          (create-3gpp-error-response r UNKNOWN))
-     (not (associated? known-public user-name))
+     (not (associated? known-public public-identity user-name))
      (do (debug "Public and private identies don't match")
          (create-3gpp-error-response r IDENTITIES_DONT_MATCH))
      (and (= SAR_NO_ASSIGNMENT server-assignment-type)
@@ -158,7 +161,7 @@
          (create-error-response r UNABLE_TO_COMPLY))
      (registered-elsewhere? known-public server-name)
      (do (debug "Public identity already registered")
-         (create-error-response r IDENTITY_ALREADY_REGISTERED (:scscf-sip-uri known-public)))
+         (create-error-response r IDENTITY_ALREADY_REGISTERED))
      :else
      (do
        (debug "Request OK!")
@@ -166,13 +169,14 @@
          #{SAR_REGISTRATION SAR_RE_REGISTRATION}
          (do (update-scscf! known-public server-name origin-host origin-realm)
              (register! known-public user-name public-identity)
-             (create-sar-response r server-assignment-type user-data-already-available known-public))
+             (create-sar-response r known-public public-identity server-assignment-type user-data-already-available)
+             )
          #{SAR_NO_ASSIGNMENT}
-         (create-sar-response r server-assignment-type user-data-already-available known-public)
+         (create-sar-response r known-public public-identity server-assignment-type user-data-already-available)
          #{SAR_UNREGISTERED_USER}
          (do
            (update-scscf! known-public server-name origin-host origin-realm)
-           (create-sar-response r server-assignment-type user-data-already-available known-public))
+           (create-sar-response r known-public public-identity server-assignment-type user-data-already-available))
          #{SAR_TIMEOUT_DEREGISTRATION
            SAR_USER_DEREGISTRATION
            SAR_DEREGISTRATION_TOO_MUCH_DATA
@@ -182,13 +186,15 @@
          (let [new-state (unregister! known-public user-name public-identity)]
            (if (no-registrations? new-state)
              (clear-scscf! known-public))
-           (create-sar-response r server-assignment-type user-data-already-available known-public))
+           (create-sar-response r known-public public-identity server-assignment-type user-data-already-available)
+           )
          #{SAR_AUTHENTICATION_FAILURE
            SAR_AUTHENTICATION_TIMEOUT}
          (let [new-state (unregister! known-public user-name public-identity)]
            (if (no-registrations? new-state)
              (clear-scscf! known-public))
-           (create-sar-response r server-assignment-type user-data-already-available known-public)))))))
+           (create-sar-response r known-public public-identity server-assignment-type user-data-already-available)
+           ))))))
 
 (defn process-lir [^org.jdiameter.api.Request r get-public get-private update-scscf! clear-scscf! register! set-auth-pending! unregister! update-aka-seqn! set-scscf-reassignment-pending!]
   (let [avps (.getAvps r)
@@ -228,7 +234,7 @@
      (nil? known-public)
      (do (debug "Public ID not found")
          (create-3gpp-error-response r UNKNOWN))
-     (not (associated? known-public user-name))
+     (not (associated? known-public public-identity user-name))
      (do (debug "Public and private identies don't match")
          (create-3gpp-error-response r IDENTITIES_DONT_MATCH))
      (not (correct-auth-scheme? known-private auth-scheme))
@@ -252,13 +258,13 @@
                         update-aka-seqn!
                         set-scscf-reassignment-pending!]
   (proxy [NetworkReqListener] []
-    (processRequest [^org.jdiameter.api.Request r]
-      (debug "cx-listener called")
-      (let [args [r get-public get-private update-scscf! clear-scscf! register! set-auth-pending! unregister! update-aka-seqn! set-scscf-reassignment-pending!]]
-        (case (.getCommandCode r)
-          300 (apply process-uar args)
-          301 (apply process-sar args)
-          302 (apply process-lir args)
-          303 (apply process-mar args))))))
+      (processRequest [^org.jdiameter.api.Request r]
+        (debug "cx-listener called")
+        (let [args [r get-public get-private update-scscf! clear-scscf! register! set-auth-pending! unregister! update-aka-seqn! set-scscf-reassignment-pending!]]
+          (case (.getCommandCode r)
+            300 (apply process-uar args)
+            301 (apply process-sar args)
+            302 (apply process-lir args)
+            303 (apply process-mar args))))))
 
 

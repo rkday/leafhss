@@ -1,12 +1,13 @@
-(ns clojure-jdiameter.testdata)
+(ns org.leafhss.hss.testdata)
 
-(def example-public {:scscf-sip-uri "example.com"
+(def example-public
+  {:scscf-sip-uri "example.com"
    :scscf-diameter-host nil
    :scscf-diameter-realm nil
    :mandatory-capabilities [1 2 3]
    :optional-capabilities [4 5 6]
-   :private-ids #{"rkd@example.com"}
-   :public-ids {"sip:rkd@example.com" {:barred false
+   :private-ids #{"rkd@example.com" "rkd2@example.com"}
+      :public-ids {"sip:rkd@example.com" {:barred false
                                        :alias-group 6
                                        :irs 1}
                 "tel:+123467890" {:barred false
@@ -22,6 +23,8 @@
                                         :alias-group 8
                                         :irs 2}}
    :roaming-networks #{"example.com"}
+   :implicit-registration-sets {1 :private-id nil
+                                2 :private-id "rkd@example.com"}
    :alias-groups {6 {:ifcs "<ServiceProfile><InitialFilterCriteria><Priority>1</Priority><TriggerPoint><ConditionTypeCNF>0</ConditionTypeCNF><SPT><ConditionNegated>0</ConditionNegated><Group>0</Group><Method>INVITE</Method></SPT></TriggerPoint><ApplicationServer><ServerName>sip:vpn@192.168.1.139:5060</ServerName><DefaultHandling>0</DefaultHandling><Extension><ForceB2B/></Extension></ApplicationServer></InitialFilterCriteria></ServiceProfile>"}
                   7 {:ifcs "<ServiceProfile><InitialFilterCriteria><Priority>1</Priority><TriggerPoint><ConditionTypeCNF>0</ConditionTypeCNF><SPT><ConditionNegated>0</ConditionNegated><Group>0</Group><Method>REGISTER</Method></SPT></TriggerPoint><ApplicationServer><ServerName>sip:voicemail@192.168.1.1:5060</ServerName><DefaultHandling>0</DefaultHandling></ApplicationServer></InitialFilterCriteria></ServiceProfile>"}
                   8 {:ifcs "<ServiceProfile></ServiceProfile>"}}
@@ -32,6 +35,27 @@
 (def example-public-unregistered (-> example-public
                                      (assoc :scscf-sip-uri nil)
                                      (assoc :registered-impis #{})))
+
+(def example-public-one-barred
+    (-> example-public
+      (assoc :public-ids {"sip:rkd@example.com" {:barred false
+                                                 :alias-group 6
+                                                 :irs 1}
+                          "sip:rkd3@example.com" {:barred true
+                                                  :alias-group 6
+                                                  :irs 1}})))
+
+
+(def example-public-all-barred
+    (-> example-public
+      (assoc :public-ids {"sip:rkd@example.com" {:barred true
+                                                 :alias-group 6
+                                                 :irs 1}
+                          "sip:rkd3@example.com" {:barred true
+                                                  :alias-group 6
+                                                  :irs 1}})))
+
+
 
 
 (defn get-public [impu]
