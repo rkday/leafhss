@@ -24,7 +24,7 @@ In this mode:
 
 ## Diameter
 
-LeafHSS uses the Mobicents jDiameter stack, and so Diameter-level configuration (e.g. peers allowed to connect) must be specified in a Jdiameter config file. The `--jdiameter-config` command line option allows you to specify which config file to use; an example file is (available here)[https://raw.github.com/rkday/leafhss/master/resources/config.xml], and [Red Hat have a guide to the configuration here](https://access.redhat.com/site/documentation/en-US/JBoss_Communications_Platform/5.1/html/Diameter_User_Guide/jdiameter-configuration.html).
+LeafHSS uses the Mobicents jDiameter stack, and so Diameter-level configuration (e.g. peers allowed to connect) must be specified in a Jdiameter config file. The `--jdiameter-config` command line option allows you to specify which config file to use; an example file is [available here](https://raw.github.com/rkday/leafhss/master/resources/config.xml), and [Red Hat have a guide to the configuration here](https://access.redhat.com/site/documentation/en-US/JBoss_Communications_Platform/5.1/html/Diameter_User_Guide/jdiameter-configuration.html).
 
 ## License
 
