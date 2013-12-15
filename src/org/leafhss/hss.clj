@@ -1,4 +1,5 @@
 (ns org.leafhss.hss
+  (:gen-class)
   (:require [taoensso.timbre :as timbre]
             [clojure.tools.cli :refer [parse-opts]]
             [org.leafhss.hss.stack :as stack]
@@ -20,8 +21,10 @@
     :default "example.com"]
    [nil "--digest-realm <REALM>" "Name of the realm, used for calculating the SIP digest"
     :default "example.com"]
-   [nil "--standard-password <PASSWORD>" "Standard password used for calculating the SIP digest for all users"
+      [nil "--standard-password <PASSWORD>" "Standard password used for calculating the SIP digest for all users"
     :default "swordfish"]
+      [nil "--jdiameter-config <PATH>" "Path to the jDiameter config file which controls peers, realms, etc."
+    :default "resources/config.xml"]
    ["-h" "--help"]])
 
 (defn exit [status msg]
@@ -45,16 +48,19 @@
      (:help options) (exit 0 (usage summary)))
     (println "Options are: " (str options))
     (let [[stack session-factory]
-           (stack/make-stack (make-get-public (:scscf-sip-uri options) (:visited-network-id options))
-                             (make-get-private (:digest-realm options) (:standard-password options))
-                             update-scscf!
-                             clear-scscf!
-                             register!
-                             set-auth-pending!
-                             unregister!
-                             update-aka-seqn!
-                             set-scscf-reassignment-pending!)]
-      (Thread/sleep 3600000)
+          (stack/make-stack (:jdiameter-config options)
+                            (make-get-public (:scscf-sip-uri options) (:visited-network-id options))
+                            (make-get-private (:digest-realm options) (:standard-password options))
+                            update-scscf!
+                            clear-scscf!
+                            register!
+                            set-auth-pending!
+                            unregister!
+                            update-aka-seqn!
+                            set-scscf-reassignment-pending!)]
+      (loop []
+        (Thread/sleep 10000)
+        (recur))
       (.destroy stack))))
 
 (comment (let [session (.getNewSession session-factory)

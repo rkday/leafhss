@@ -165,7 +165,7 @@
                                             :alias-group 1
                                             :irs irs-uuid}}
                          :roaming-networks #{"example.com"}
-                         :implicit-registration-sets {irs-uuid :private-id impu}
+                         :implicit-registration-sets {irs-uuid {:private-id impu}}
                          :alias-groups {1 {:ifcs ifcs}}}
                         :content-type "application/clojure"
                         :links [{:bucket "subscription-state" :key subscription-uuid :tag "state"}]))

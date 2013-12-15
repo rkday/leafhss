@@ -16,9 +16,13 @@ To start LeafHSS in auto-answer mode, use the command-line option `--autoanswer`
 In this mode:
 
 - User-Authorization-Requests succeed if the Visited-Network matches the --visited-network-id parameter and the Public-Identity is the SIP URI variant of the User-Name (e.g "sip:1234@example.com" and "1234@example.com"). The User-Authorization-Answer contains the Server-Name set by the `--scscf-sip-uri` parameter
-- Multimedia-Auth-Requests succeed if the Public-Identity is the SIP URI variant of the User-Name (e.g "sip:1234@example.com" and "1234@example.com") and the authentication type requested is "SIP Digest" or "Unknown". The answer always contains the realm specified by the `--digest-realm` parameter and a HA1 created by a hash of the User-Name, the realm and the password specified by the `--standard-password` parameter. 
+- Multimedia-Auth-Requests succeed if the Public-Identity is the SIP URI variant of the User-Name (e.g "sip:1234@example.com" and "1234@example.com") and the authentication type requested is "SIP Digest" or "Unknown". The answer always contains the realm specified by the `--digest-realm` parameter and a HA1 created by a hash of the User-Name, the realm and the password specified by the `--standard-password` parameter.
 - Server-Assignment-Requests succeed if the Public-Identity is the SIP URI variant of the User-Name (e.g "sip:1234@example.com" and "1234@example.com"). The User-Data in the answer contains no initial filter criteria.
 - Location-Information-Requests always succeed. The User-Authorization-Answer contains the Server-Name set by the `--scscf-sip-uri` parameter.
+
+## Diameter
+
+LeafHSS uses the Mobicents jDiameter stack, and so Diameter-level configuration (e.g. peers allowed to connect) must be specified in a Jdiameter config file. The `--jdiameter-config` command line option allows you to specify which config file to use; an example file is (available here)[https://raw.github.com/rkday/leafhss/master/resources/config.xml], and [Red Hat have a guide to the configuration here](https://access.redhat.com/site/documentation/en-US/JBoss_Communications_Platform/5.1/html/Diameter_User_Guide/jdiameter-configuration.html).
 
 ## License
 

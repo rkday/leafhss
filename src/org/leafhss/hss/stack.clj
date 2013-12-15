@@ -8,7 +8,8 @@
            org.jdiameter.api.Network
            org.jdiameter.api.ApplicationId))
 
-(defn make-stack [get-public
+(defn make-stack [config-file
+                  get-public
                   get-private
                   update-scscf!
                   clear-scscf!
@@ -18,7 +19,7 @@
                   update-aka-seqn!
                   set-scscf-reassignment-pending!]
   (let [stack  (new ^org.jdiameter.server.impl.StackImpl StackImpl)
-        config (new XMLConfiguration "resources/config.xml")
+        config (new XMLConfiguration config-file)
         session-factory (.init stack config)
         nw (.unwrap ^org.jdiameter.server.impl.StackImpl stack Network)
         apps [(ApplicationId/createByAuthAppId 10415 16777216)

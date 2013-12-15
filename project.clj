@@ -19,4 +19,5 @@
                  [org.clojure/tools.cli "0.3.0-beta1"]]
   :plugins [[lein-cloverage "1.0.2"]]
   :profiles {:dev {:dependencies [[cljito "0.2.1"]
-                                  [org.mockito/mockito-all "1.9.5"]]}})
+                                  [org.mockito/mockito-all "1.9.5"]]}
+             :uberjar {:aot :all, :main org.leafhss.hss}})
