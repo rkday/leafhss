@@ -2,6 +2,8 @@
 
 A modern open-source HSS for use in IMS networks.
 
+The current version is available for download [here](https://s3.amazonaws.com/org.leafhss/org.leafhss.hss-0.1.0-SNAPSHOT-standalone.jar) and can be run with `java -jar org.leafhss.hss-0.1.0-SNAPSHOT-standalone.jar [options]`
+
 ## Usage
 
 LeafHSS has two modes - a full mode (where subscriber data is provisioned and stored in a database) and an auto-answer mode (where all requests receive default responses) which is useful for testing other IMS components. The auto-answer mode currently works, and the full mode is still in development.
