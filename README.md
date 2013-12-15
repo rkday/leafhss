@@ -20,7 +20,7 @@ In this mode:
 - User-Authorization-Requests succeed if the Visited-Network matches the --visited-network-id parameter and the Public-Identity is the SIP URI variant of the User-Name (e.g "sip:1234@example.com" and "1234@example.com"). The User-Authorization-Answer contains the Server-Name set by the `--scscf-sip-uri` parameter
 - Multimedia-Auth-Requests succeed if the Public-Identity is the SIP URI variant of the User-Name (e.g "sip:1234@example.com" and "1234@example.com") and the authentication type requested is "SIP Digest" or "Unknown". The answer always contains the realm specified by the `--digest-realm` parameter and a HA1 created by a hash of the User-Name, the realm and the password specified by the `--standard-password` parameter.
 - Server-Assignment-Requests succeed if the Public-Identity is the SIP URI variant of the User-Name (e.g "sip:1234@example.com" and "1234@example.com"). The User-Data in the answer contains no initial filter criteria.
-- Location-Information-Requests always succeed. The User-Authorization-Answer contains the Server-Name set by the `--scscf-sip-uri` parameter.
+- Location-Information-Requests always succeed. The answer contains the Server-Name set by the `--scscf-sip-uri` parameter.
 
 ## Diameter
 
