@@ -21,7 +21,7 @@
 (defn make-get-private [realm fixed-password]
   (fn get-private [impi]
     {:auth-type "SIP Digest"
-     :sip-digest {:realm realm :ha1 (md5 (str impi realm fixed-password))}}))
+     :sip-digest {:realm realm :ha1 (md5 (str impi ":" realm ":" fixed-password))}}))
 
 (defn clear-scscf! [current-state]
   current-state)
