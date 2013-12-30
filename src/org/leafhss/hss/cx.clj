@@ -9,6 +9,14 @@
            org.jdiameter.api.Network
            org.jdiameter.api.ApplicationId))
 
+(defn create-3gpp-error-response [^org.jdiameter.api.Request r code]
+  (let [resp (.createAnswer r THREEGPP code)]
+    resp))
+
+(defn create-error-response [^org.jdiameter.api.Request r code]
+  (let [resp (.createAnswer r code)]
+    resp))
+
 (defn populate-uaa-with-capabilities [^org.jdiameter.api.Answer resp mandatory-capabilities optional-capabilities]
   (if (and (empty? mandatory-capabilities)
            (empty? optional-capabilities))
@@ -24,32 +32,67 @@
 (defn create-uar-response [^org.jdiameter.api.Request r auth-type mandatory-capabilities optional-capabilities server-name]
   (cond
    (= auth-type REGISTRATION_AND_CAPABILITIES)
-   (do (debug "Returning 2001 response with capabilities to UAR")
+   (do (debug "Returning SUCCESS response with capabilities to UAR")
        (populate-uaa-with-capabilities (.createAnswer r 2001) mandatory-capabilities optional-capabilities))
+
    (and (nil? server-name) (= auth-type REGISTRATION))
-   (do (debug "Returning 3GPP 2001 response with capabilities to UAR")
+   (do (debug "Returning FIRST_REGISTRATION response with capabilities to UAR")
        (populate-uaa-with-capabilities (.createAnswer r THREEGPP 2001) mandatory-capabilities optional-capabilities))
+
    (= auth-type REGISTRATION)
-   (do (debug "Returning 3GPP 2002 response with Server-Name to UAR")
+   (do (debug "Returning SUBSEQUENT_REGISTRATION response with Server-Name to UAR")
        (let [resp (.createAnswer r THREEGPP 2002)
              ^org.jdiameter.client.impl.parser.AvpSetImpl avps (.getAvps resp)]
          (.addAvp avps 602 server-name 10415 true false false)
          resp))
+
    (= auth-type DEREGISTRATION)
-   (do (debug "Returning 2001 response with Server-Name to UAR")
+   (do (debug "Returning SUCCESS response with Server-Name to UAR")
        (let [resp (.createAnswer r 2001)
              ^org.jdiameter.client.impl.parser.AvpSetImpl avps (.getAvps resp)]
          (.addAvp avps 602 server-name 10415 true false false)
          resp))))
 
+(defn create-sar-error [^org.jdiameter.api.Request r code threegpp pub]
+  (let [resp (if threegpp
+               (create-3gpp-error-response r code)
+               (create-error-response r code))
+        ^org.jdiameter.client.impl.parser.AvpSetImpl avps (.getAvps resp)]
+    (if-let [priv (first (:private-ids pub))]
+      (.addAvp avps 1 priv true false true))
+    (when (and threegpp (= IDENTITY_ALREADY_REGISTERED code))
+      (.addAvp avps 602 (:scscf-sip-uri pub) THREEGPP true false true))
+    resp))
+
+(defn add-ccfs! [^org.jdiameter.client.impl.parser.AvpSetImpl avps pub]
+  (let [charging-information (.addGroupedAvp avps 618 THREEGPP true false)
+        ecf1 (first (:ecfs pub))
+        ecf2 (second (:ecfs pub))
+        ccf1 (first (:ccfs pub))
+        ccf2 (second (:ccfs pub))]
+    (when ecf1
+      (.addAvp charging-information 619 ecf1 THREEGPP true false false))
+    (when ecf2
+      (.addAvp charging-information 620 ecf2 THREEGPP true false false))
+    (when ccf1
+      (.addAvp charging-information 621 ccf1 THREEGPP true false false))
+    (when ccf2
+      (.addAvp charging-information 622 ccf2 THREEGPP true false false))))
+
+(defn send-userdata? [sat]
+  (contains? #{SAR_REGISTRATION SAR_RE_REGISTRATION SAR_NO_ASSIGNMENT SAR_UNREGISTERED_USER} sat))
+
 (defn create-sar-response [^org.jdiameter.api.Request r pub impu server-assignment-type user-data-already-available]
   (debug "create-sar-response called")
   (let [resp (.createAnswer r 2001)
-        ^org.jdiameter.client.impl.parser.AvpSetImpl avps (.getAvps resp)]
-    (when (= 0 user-data-already-available)
+        ^org.jdiameter.client.impl.parser.AvpSetImpl avps (.getAvps resp)
+        priv (first (:private-ids pub))]
+    (.addAvp avps 1 priv true false true)
+    (when (and (= 0 user-data-already-available) (send-userdata? server-assignment-type))
       (debug "adding user data")
-      (.addAvp avps 606 (get-userdata impu pub) THREEGPP true false true))
-      resp))
+      (.addAvp avps 606 (get-userdata impu pub) THREEGPP true false true)
+      (add-ccfs! avps pub))
+    resp))
 
 (defn create-lir-response [^org.jdiameter.api.Request r auth-type mandatory-capabilities optional-capabilities server-name]
   (cond
@@ -79,14 +122,6 @@
     (.addAvp sip-digest-auth 111 "MD5" false) ;; SIP-Number-Auth-items
     (.addAvp sip-digest-auth 110 "auth" false) ;; SIP-Number-Auth-items
     (.addAvp sip-digest-auth 121 ^String (:ha1 (:sip-digest priv)) false) ;; SIP-Number-Auth-items
-    resp))
-
-(defn create-3gpp-error-response [^org.jdiameter.api.Request r code]
-  (let [resp (.createAnswer r THREEGPP code)]
-    resp))
-
-(defn create-error-response [^org.jdiameter.api.Request r code]
-  (let [resp (.createAnswer r code)]
     resp))
 
 (defn process-uar [^org.jdiameter.api.Request r get-public get-private update-scscf! clear-scscf! register! set-auth-pending! unregister! update-aka-seqn! set-scscf-reassignment-pending!]
@@ -148,20 +183,20 @@
     (cond
      (nil? known-private)
      (do (debug "Private ID not found")
-         (create-3gpp-error-response r UNKNOWN))
+         (create-sar-error r UNKNOWN true known-public))
      (nil? known-public)
      (do (debug "Public ID not found")
-         (create-3gpp-error-response r UNKNOWN))
+         (create-sar-error r UNKNOWN true known-public))
      (not (associated? known-public public-identity user-name))
      (do (debug "Public and private identies don't match")
-         (create-3gpp-error-response r IDENTITIES_DONT_MATCH))
+         (create-sar-error r IDENTITIES_DONT_MATCH true known-public))
      (and (= SAR_NO_ASSIGNMENT server-assignment-type)
           (not (registered-here? known-public server-name)))
      (do (debug "S-CSCF does not own this identity, unable to comply with NO_ASSIGNMENT request")
-         (create-error-response r UNABLE_TO_COMPLY))
+         (create-sar-error r UNABLE_TO_COMPLY false known-public))
      (registered-elsewhere? known-public server-name)
      (do (debug "Public identity already registered")
-         (create-3gpp-error-response r IDENTITY_ALREADY_REGISTERED))
+         (create-sar-error r IDENTITY_ALREADY_REGISTERED true known-public))
      :else
      (do
        (debug "Request OK!")
@@ -193,8 +228,7 @@
          (let [new-state (unregister! known-public user-name public-identity)]
            (if (no-registrations? new-state)
              (clear-scscf! known-public))
-           (create-sar-response r known-public public-identity server-assignment-type user-data-already-available)
-           ))))))
+           (create-sar-response r known-public public-identity server-assignment-type user-data-already-available)))))))
 
 (defn process-lir [^org.jdiameter.api.Request r get-public get-private update-scscf! clear-scscf! register! set-auth-pending! unregister! update-aka-seqn! set-scscf-reassignment-pending!]
   (let [avps (.getAvps r)

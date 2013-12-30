@@ -6,6 +6,8 @@
    :scscf-diameter-realm nil
    :mandatory-capabilities [1 2 3]
    :optional-capabilities [4 5 6]
+   :ccfs ["aaa://host.example.com:6666;transport=tcp;protocol=diameter" "aaa://host2.example.com:6666;transport=tcp;protocol=diameter"]
+   :ecfs ["aaa://host.example.com:6666;transport=tcp;protocol=diameter" "aaa://host2.example.com:6666;transport=tcp;protocol=diameter"]
    :private-ids #{"rkd@example.com" "rkd2@example.com"}
       :public-ids {"sip:rkd@example.com" {:barred false
                                        :alias-group 6

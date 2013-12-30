@@ -65,12 +65,12 @@
 (def mock-unregistered-service-answer (create-mock-answer))
 (def mock-server-name-not-stored-answer (create-mock-answer))
 
-(def mock-unknown-answer (mock Answer))
-(def mock-disassoc-answer (mock Answer))
+(def mock-unknown-answer (create-mock-answer))
+(def mock-disassoc-answer (create-mock-answer))
 (def mock-unregistered-answer (create-mock-answer))
-(def mock-roaming-not-allowed-answer (mock Answer))
+(def mock-roaming-not-allowed-answer (create-mock-answer))
 (def mock-already-registered-answer (create-mock-answer))
-(def mock-bad-auth-answer (mock Answer))
+(def mock-bad-auth-answer (create-mock-answer))
 
 (defn make-mock [code]
   (let [mocked (mock Request)]
