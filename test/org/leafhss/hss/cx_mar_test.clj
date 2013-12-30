@@ -56,22 +56,19 @@
             (create-mock-mar "rkd@example.com" "sip:rkd@example.com" "sip:example.com;transport=tcp" "SOMETHINGELSE"))))))
 
 (deftest unknown-test
-  (testing "Test that a known Multimedia-Auth-Request passes validation"
+  (testing "Test that a Multimedia-Auth-Request fails if either the public or private ID it references do not exist"
     (is (= mock-unknown-answer
            (.processRequest
             public-not-found-cx-listener
             (create-mock-mar "rkd@example.com"
                              "sip:rkd@example.com"
                              "sip:example.com;transport=tcp"
-                             "Unknown")
-            )))
+                             "Unknown"))))
     (is (= mock-unknown-answer
            (.processRequest
             private-not-found-cx-listener
             (create-mock-mar "rkd@example.com"
                              "sip:rkd@example.com"
                              "sip:example.com;transport=tcp"
-                             "Unknown")
-            )))
-    ))
+                             "Unknown"))))))
 

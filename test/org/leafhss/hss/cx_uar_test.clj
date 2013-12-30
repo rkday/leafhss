@@ -3,6 +3,7 @@
             [org.leafhss.hss.cx :refer :all]
             [org.leafhss.hss.data :as data]
             [org.leafhss.hss.testdata :refer :all]
+            [org.leafhss.hss.constants :refer :all]
             [org.leafhss.hss.common-test :refer :all]
             [cljito.core :refer :all])
   (:import org.jdiameter.api.Request
@@ -31,98 +32,111 @@
             (.thenReturn auth-type-avp))
     mocked))
 
-(deftest success-test
-  (testing "Test that a known Multimedia-Auth-Request passes validation"
+(deftest registration
+  (testing "Test that a UAR succeeds when the user is already registered"
     (is (= mock-ok-answer
            (.processRequest
             cx-listener
             (create-mock-uar "rkd@example.com"
                              "sip:rkd@example.com"
-                             0
-                             "example.com"))))
+                             REGISTRATION
+                             "example.com")))))
+  (testing "Test that a UAR succeeds when the user is not already registered"
     (is (= mock-ok-answer
            (.processRequest
             unregistered-cx-listener
             (create-mock-uar "rkd@example.com"
                              "sip:rkd@example.com"
-                             0
-                             "example.com"))))
-
-    ))
-
-(deftest success-test-deregistration
-  (testing "Test that a known Multimedia-Auth-Request passes validation"
-    (is (= mock-ok-answer
-           (.processRequest
-            cx-listener
-            (create-mock-uar "rkd@example.com"
-                             "sip:rkd@example.com"
-                             1
+                             REGISTRATION
                              "example.com"))))))
 
-(deftest success-test-registration-and-capabilities
-  (testing "Test that a known Multimedia-Auth-Request passes validation"
+(deftest deregistration
+  (testing "Test that a UAR succeeds when it is for a deregistration of a registered user"
     (is (= mock-ok-answer
            (.processRequest
             cx-listener
             (create-mock-uar "rkd@example.com"
                              "sip:rkd@example.com"
-                             2
+                             DEREGISTRATION
                              "example.com")))))
-  (testing "Test that a known Multimedia-Auth-Request passes validation"
+
+  (testing "Test that a UAR fails when it is for a deregistration of an unregistered user"
+    (is (= mock-unregistered-answer
+           (.processRequest
+            unregistered-cx-listener
+            (create-mock-uar "rkd@example.com"
+                             "sip:rkd@example.com"
+                             DEREGISTRATION
+                             "example.com"))))))
+
+(deftest registration-and-capabilities
+  (testing "Test that a UAR succeeds when it requests the capabilities (for SIP restoration)"
+    (is (= mock-ok-answer
+           (.processRequest
+            cx-listener
+            (create-mock-uar "rkd@example.com"
+                             "sip:rkd@example.com"
+                             REGISTRATION_AND_CAPABILITIES
+                             "example.com")))))
+  (testing "Test that a UAR succeeds when it requests the capabilities (for SIP restoration) and there are no capabilities"
     (is (= mock-ok-answer
            (.processRequest
             no-capabilities-cx-listener
             (create-mock-uar "rkd@example.com"
                              "sip:rkd@example.com"
-                             2
+                             REGISTRATION_AND_CAPABILITIES
                              "example.com")))))
-  (testing "Test that a known Multimedia-Auth-Request passes validation"
+  (testing "Test that a UAR succeeds when it requests the capabilities (for SIP restoration) and there are no mandatory capabilities"
     (is (= mock-ok-answer
            (.processRequest
             optional-capabilities-cx-listener
             (create-mock-uar "rkd@example.com"
                              "sip:rkd@example.com"
-                             2
+                             REGISTRATION_AND_CAPABILITIES
                              "example.com"))))))
 
-(deftest unknown-test
-  (testing "Test that a known Multimedia-Auth-Request passes validation"
+(deftest id-failures
+  (testing "Test that a UAR fails when the public or private ID it references are unknown or not associated"
     (is (= mock-unknown-answer
            (.processRequest
             public-not-found-cx-listener
             (create-mock-uar "rkd@example.com"
                              "sip:rkd@example.com"
-                             2
+                             REGISTRATION
                              "example.com"))))
     (is (= mock-unknown-answer
            (.processRequest
             private-not-found-cx-listener
             (create-mock-uar "rkd@example.com"
                              "sip:rkd@example.com"
-                             2
+                             REGISTRATION
                              "example.com"))))
     (is (= mock-disassoc-answer
            (.processRequest
             cx-listener
             (create-mock-uar "OTHER@example.com"
                              "sip:rkd@example.com"
-                             2
+                             REGISTRATION
                              "example.com"))))
+    ))
+
+(deftest roaming-failure
+  (testing "Test that a UAR fails when it comes from a visited network where roaming is forbidden"
     (is (= mock-roaming-not-allowed-answer
            (.processRequest
             cx-listener
             (create-mock-uar "rkd@example.com"
                              "sip:rkd@example.com"
-                             0
-                             "example.co.uk"))))
-    (is (= mock-unregistered-answer
+                             REGISTRATION
+                             "example.co.uk")))))
+  (testing "Test that a UAR specifying deregistration ignores roaming"
+    (is (= mock-ok-answer
            (.processRequest
-            unregistered-cx-listener
+            cx-listener
             (create-mock-uar "rkd@example.com"
                              "sip:rkd@example.com"
-                             1
-                             "example.com"))))))
+                             DEREGISTRATION
+                             "example.co.uk"))))))
 
 (deftest barring-test
   (testing "Test that a User-Authorization-Request behaves as expected when public IDs are barred"
@@ -132,7 +146,7 @@
               all-barred-cx-listener
               (create-mock-uar "rkd@example.com"
                                "sip:rkd@example.com"
-                               2
+                               REGISTRATION
                                "example.com")))))
     (testing "Test that a UAR is not rejected when not all public IDs are barred"
       (is (= mock-ok-answer
@@ -140,7 +154,6 @@
               one-barred-cx-listener
               (create-mock-uar "rkd@example.com"
                                "sip:rkd@example.com"
-                               2
-                               "example.com")))))
-    ))
+                               REGISTRATION
+                               "example.com")))))))
 
