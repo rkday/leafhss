@@ -4,6 +4,7 @@
             [org.leafhss.hss.data :as data]
             [org.leafhss.hss.testdata :refer :all]
             [org.leafhss.hss.common-test :refer :all]
+            [org.leafhss.hss.constants :refer :all]
             [cljito.core :refer :all])
   (:import org.jdiameter.api.AvpSet
            org.jdiameter.api.Avp))
@@ -22,15 +23,15 @@
     mocked))
 
 (deftest success-test
-  (testing "Test that a known Multimedia-Auth-Request passes validation"
+  (testing "Test that a LIR for auth-type REGISTRATION succeeds"
     (is (= mock-ok-answer
            (.processRequest
             cx-listener
-            (create-mock-lir 0
+            (create-mock-lir REGISTRATION
                              "sip:rkd@example.com"))))))
 
 (deftest no-authtype-avp-test
-  (testing "Test that a known Multimedia-Auth-Request passes validation"
+  (testing "Test that a LIR without an auth-type AVP defaults correctly"
     (is (= mock-ok-answer
            (.processRequest
             cx-listener
@@ -40,28 +41,26 @@
 
 
 (deftest unreg-test
-  (testing "Test that a known Multimedia-Auth-Request passes validation"
+  (testing "Test that a LIR for auth-type REGISTRATION succeeds when the user is not registered with an S-CSCF"
     (is (= mock-unregistered-service-answer
            (.processRequest
             unregistered-cx-listener
-                        (create-mock-lir 0
+                        (create-mock-lir REGISTRATION
                              "sip:rkd@example.com"))))))
 
 (deftest restoration-test
-  (testing "Test that a known Multimedia-Auth-Request passes validation"
+  (testing "Test that a LIR for auth-type REGISTRATION_AND_CAPABILITIES (used in SIP Restoration) succeeds"
     (is (= mock-ok-answer
            (.processRequest
             unregistered-cx-listener
-            (create-mock-lir 2
+            (create-mock-lir REGISTRATION_AND_CAPABILITIES
                              "sip:rkd@example.com"))))))
 
 (deftest unknown-test
-  (testing "Test that a known Multimedia-Auth-Request passes validation"
+  (testing "Test that a LIR fails when the public ID it references does not exist"
     (is (= mock-unknown-answer
            (.processRequest
             public-not-found-cx-listener
-            (create-mock-lir 0
-                             "sip:rkd@example.com")
-            )))
-    ))
+            (create-mock-lir REGISTRATION
+                             "sip:rkd@example.com"))))))
 
