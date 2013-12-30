@@ -161,7 +161,7 @@
          (create-error-response r UNABLE_TO_COMPLY))
      (registered-elsewhere? known-public server-name)
      (do (debug "Public identity already registered")
-         (create-error-response r IDENTITY_ALREADY_REGISTERED))
+         (create-3gpp-error-response r IDENTITY_ALREADY_REGISTERED))
      :else
      (do
        (debug "Request OK!")

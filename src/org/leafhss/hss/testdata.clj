@@ -55,7 +55,15 @@
                                                   :alias-group 6
                                                   :irs 1}})))
 
+(def example-public-no-capabilities
+  (-> example-public
+      (assoc :mandatory-capabilities [])
+      (assoc :optional-capabilities [])))
 
+
+(def example-public-optional-capabilities
+  (-> example-public
+      (assoc :mandatory-capabilities [])))
 
 
 (defn get-public [impu]
@@ -91,7 +99,12 @@
   current-state)
 
 (defn unregister! [current-state impi impu]
-  current-state)
+  (let [updater (fn [{:keys [registered-impis
+                           auth-pending-impis]}]
+                 {:registered-impis (disj registered-impis impi)
+                  :auth-pending-impis (disj auth-pending-impis impi)})
+        updates (updater current-state)]
+    (merge current-state updates)))
 
 (defn set-scscf-reassignment-pending! [current-state]
   current-state)

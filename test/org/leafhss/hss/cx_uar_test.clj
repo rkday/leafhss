@@ -68,6 +68,22 @@
             (create-mock-uar "rkd@example.com"
                              "sip:rkd@example.com"
                              2
+                             "example.com")))))
+  (testing "Test that a known Multimedia-Auth-Request passes validation"
+    (is (= mock-ok-answer
+           (.processRequest
+            no-capabilities-cx-listener
+            (create-mock-uar "rkd@example.com"
+                             "sip:rkd@example.com"
+                             2
+                             "example.com")))))
+  (testing "Test that a known Multimedia-Auth-Request passes validation"
+    (is (= mock-ok-answer
+           (.processRequest
+            optional-capabilities-cx-listener
+            (create-mock-uar "rkd@example.com"
+                             "sip:rkd@example.com"
+                             2
                              "example.com"))))))
 
 (deftest unknown-test
@@ -99,5 +115,32 @@
             (create-mock-uar "rkd@example.com"
                              "sip:rkd@example.com"
                              0
-                             "example.co.uk"))))))
+                             "example.co.uk"))))
+    (is (= mock-unregistered-answer
+           (.processRequest
+            unregistered-cx-listener
+            (create-mock-uar "rkd@example.com"
+                             "sip:rkd@example.com"
+                             1
+                             "example.com"))))))
+
+(deftest barring-test
+  (testing "Test that a User-Authorization-Request behaves as expected when public IDs are barred"
+    (testing "Test that a UAR is rejected when all public IDs are barred"
+      (is (= mock-rejected-answer
+             (.processRequest
+              all-barred-cx-listener
+              (create-mock-uar "rkd@example.com"
+                               "sip:rkd@example.com"
+                               2
+                               "example.com")))))
+    (testing "Test that a UAR is not rejected when not all public IDs are barred"
+      (is (= mock-ok-answer
+             (.processRequest
+              one-barred-cx-listener
+              (create-mock-uar "rkd@example.com"
+                               "sip:rkd@example.com"
+                               2
+                               "example.com")))))
+    ))
 

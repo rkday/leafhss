@@ -2,6 +2,7 @@
   (:require [clojure.test :refer :all]
             [org.leafhss.hss.cx :refer :all]
             [org.leafhss.hss.data :as data]
+            [org.leafhss.hss.constants :refer :all]
             [org.leafhss.hss.testdata :refer :all]
             [org.leafhss.hss.common-test :refer :all]
             [cljito.core :refer :all])
@@ -72,6 +73,16 @@
                              0))))
 
 
+    (is (= mock-ok-answer
+           (.processRequest
+            cx-listener
+            (create-mock-sar "rkd@example.com"
+                             "sip:rkd@example.com"
+                             "example.com"
+                             SAR_UNREGISTERED_USER
+                             0))))
+
+
     ))
 
 (deftest unknown-test
@@ -111,6 +122,14 @@
                              "sip:rkd@example.com"
                              "example.com"
                              0
+                             0))))
+(is (= mock-already-registered-answer
+           (.processRequest
+            cx-listener
+            (create-mock-sar "rkd@example.com"
+                             "sip:rkd@example.com"
+                             "example.co.uk"
+                             1
                              0))))
 
     ))

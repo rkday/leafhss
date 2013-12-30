@@ -20,18 +20,6 @@
                   update-aka-seqn!
                   set-scscf-reassignment-pending!))
 
-(def unregistered-cx-listener (make-cx-listener
-                  (get-public-with-scscf nil)
-                  get-private
-                  update-scscf!
-                  clear-scscf!
-                  register!
-                  set-auth-pending!
-                  unregister!
-                  update-aka-seqn!
-                  set-scscf-reassignment-pending!))
-
-
 (def public-not-found-cx-listener (make-cx-listener
                   (constantly nil)
                   get-private
@@ -54,6 +42,50 @@
                   unregister!
                   update-aka-seqn!
                   set-scscf-reassignment-pending!))
+
+(def all-barred-cx-listener
+  (make-cx-listener
+   (constantly example-public-all-barred)
+   get-private
+   update-scscf!
+   clear-scscf!
+   register!
+   set-auth-pending!
+   unregister!
+   update-aka-seqn!
+   set-scscf-reassignment-pending!))
+
+(def one-barred-cx-listener
+  (make-cx-listener
+   (constantly example-public-one-barred)
+   get-private
+   update-scscf!
+   clear-scscf!
+   register!
+   set-auth-pending!
+   unregister!
+   update-aka-seqn!
+   set-scscf-reassignment-pending!))
+
+
+
+(defn cx-listener-from-public [public]
+  (make-cx-listener
+   (constantly public)
+   get-private
+   update-scscf!
+   clear-scscf!
+   register!
+   set-auth-pending!
+   unregister!
+   update-aka-seqn!
+   set-scscf-reassignment-pending!))
+
+(def optional-capabilities-cx-listener (cx-listener-from-public example-public-optional-capabilities))
+
+(def no-capabilities-cx-listener (cx-listener-from-public example-public-no-capabilities))
+
+(def unregistered-cx-listener (cx-listener-from-public example-public-unregistered))
 
 (defn create-mock-answer []
   (let [mockset1 (when->
@@ -79,6 +111,9 @@
 (def mock-subsequent-reg-answer (mock Answer))
 (def mock-unregistered-service-answer (create-mock-answer))
 (def mock-cant-comply-answer (create-mock-answer))
+(def mock-rejected-answer (create-mock-answer))
+(def mock-already-registered-answer (create-mock-answer))
+(def mock-unregistered-answer (create-mock-answer))
 
 (defn make-mock [code]
   (let [mocked (mock Request)]
@@ -95,6 +130,10 @@
         (when-> mocked (.createAnswer 10415 5002) (.thenReturn mock-disassoc-answer))
         (when-> mocked (.createAnswer 10415 5004) (.thenReturn mock-roaming-not-allowed-answer))
         (when-> mocked (.createAnswer 10415 5006) (.thenReturn mock-bad-auth-answer))
+        (when-> mocked (.createAnswer 4001) (.thenReturn mock-rejected-answer))
+        (when-> mocked (.createAnswer 10415 5005) (.thenReturn mock-already-registered-answer))
+        (when-> mocked (.createAnswer 10415 5003) (.thenReturn mock-unregistered-answer))
+
     ))
 
 
